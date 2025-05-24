@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PsyRA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200..1000&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.hugeicons.com/font/hgi-stroke-rounded.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Nunito", sans-serif;
+        background-color: #f0f4f8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #ffffff;
+        padding: 10px 20px;
+        box-shadow: 1px 1px 3px 10px rgba(151, 123, 177, 0.5);
+        border-radius: 50px;
+        width: 95%;
+        max-width: 1400px;
+        margin: 20px auto;
+      }
+
+      nav img {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 15px;
+      }
+
+      nav span {
+        font-size: 24px;
+        font-weight: 600;
+        background: linear-gradient(45deg, #9b59b6, #4a90e2);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      nav .nav-links {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-grow: 1;
+      }
+
+      nav a {
+        font-size: 16px;
+        text-decoration: none;
+        margin: 0 20px;
+        color: #666666;
+        padding: 8px 16px;
+        border-radius: 20px;
+        transition: box-shadow 0.3s ease, background 0.3s ease;
+      }
+
+      nav .nav-links a {
+        box-shadow: 0 2px 8px rgba(151, 123, 177, 0.15);
+        background: transparent;
+      }
+
+      nav .nav-links a:hover {
+        background: linear-gradient(45deg, rgba(155, 89, 182, 0.2), rgba(74, 144, 226, 0.2));
+      }
+
+      nav .nav-links a.active,
+      nav .nav-links a:active {
+        box-shadow: 0 2px 8px rgba(151, 123, 177, 0.5);
+        background: linear-gradient(45deg, #9b59b6, #4a90e2);
+        color: #ffffff;
+      }
+
+      nav a.logout {
+        padding: 8px 20px;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+      }
+
+      main {
+        margin-top: 20px;
+        padding: 0;
+        width: 95%;
+        max-width: 1400px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <div style="display: flex; align-items: center;">
+        <img src="/assets/logops.png" alt="PsyRA AI Logo">
+        <span>PSYRA AI</span>
+      </div>
+      <div class="nav-links">
+        <a href="/app/{{ userId }}" id="home-link">home</a>
+        <a href="/app/{{ userId }}/chats" id="chat-link">chat</a>
+        <a href="/app/{{ userId }}/settings" id="settings-link">settings</a>
+      </div>
+      <div>
+        <a href="/auth/logout" class="logout">logout</a>
+      </div>
+    </nav>
+
+    <main id="main-content">{% block content %}{% endblock %}</main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const url = window.location.pathname;
+        const basePath = "/app/{{ userId }}";
+        const chatPath = basePath + "/chats";
+        const settingsPath = basePath + "/settings";
+
+        const homeLink = document.getElementById("home-link");
+        const chatLink = document.getElementById("chat-link");
+        const settingsLink = document.getElementById("settings-link");
+
+        // Remove active class from all links initially
+        homeLink.classList.remove("active");
+        chatLink.classList.remove("active");
+        settingsLink.classList.remove("active");
+
+        // Check exact match for home and settings, and partial match for chat
+        if (url === basePath) {
+          homeLink.classList.add("active");
+        } else if (url.startsWith(chatPath)) { // Check if URL starts with chatPath
+          chatLink.classList.add("active");
+        } else if (url === settingsPath) {
+          settingsLink.classList.add("active");
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+{% block content %}
+<style>
+  .home-card {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 15px 15px rgba(151, 123, 177, 0.25);
+    width: 450px;
+    text-align: center;
+    margin: 50px auto;
+  }
+
+  .home-card h1 {
+    font-size: 28px;
+    font-weight: 600;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+  }
+
+  .welcome-box {
+    background-color: rgba(155, 89, 182, 0.05);
+    border: 1px solid rgba(155, 89, 182, 0.2);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    text-align: left;
+    line-height: 1.6;
+  }
+
+  .welcome-box p {
+    font-size: 16px;
+    color: #666666;
+    margin: 0;
+  }
+
+  .welcome-box .highlight {
+    color: #40b7d2;
+    font-weight: 900;
+  }
+
+  .start-session-btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+
+  .start-session-btn:hover {
+    background: linear-gradient(45deg, #8b49a6, #3a80d2);
+    transform: scale(1.05);
+  }
+</style>
+
+<div class="home-card">
+  <h1>Welcome, {{ user_name }}!</h1>
+  <div class="welcome-box">
+    <p>Hey <span class="highlight">{{ user_name }}</span>, we hope you’re feeling well! I’m PsyRA, your supportive companion. Whether you’re feeling overwhelmed, anxious, or just need someone to talk to, I’m here for you anytime. Let’s work together to understand your feelings and find exercises to help you feel better.</p>
+  </div>
+  <a href="/app/{{ userId }}/chats" class="start-session-btn">Start Session</a>
+</div>
+{% endblock %}

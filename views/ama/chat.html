@@ -1,0 +1,849 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.7.8/axios.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+  <div class="modal-content">
+    <h3>Delete Conversation</h3>
+    <p>Are you sure you want to delete this conversation? This action cannot be undone.</p>
+    <div class="modal-actions">
+      <button id="cancelDelete" class="modal-btn cancel">Cancel</button>
+      <button id="confirmDelete" class="modal-btn confirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Chat Modal -->
+<div id="renameModal" class="modal">
+  <div class="modal-content">
+    <h3>Rename Conversation</h3>
+    <input type="text" id="renameInput" placeholder="Enter new chat name" />
+    <div class="modal-actions">
+      <button id="cancelRename" class="modal-btn cancel">Cancel</button>
+      <button id="confirmRename" class="modal-btn confirm">Rename</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Confirmation Modal -->
+<div id="renameConfirmModal" class="modal">
+  <div class="modal-content">
+    <h3>Confirm Rename</h3>
+    <p>Are you sure you want to rename this conversation to "<span id="newChatName"></span>"?</p>
+    <div class="modal-actions">
+      <button id="cancelRenameConfirm" class="modal-btn cancel">Cancel</button>
+      <button id="397a6f7f-a4e8-4f5c-bfe1-8f7bade27d9e" class="modal-btn confirm">Yes</button>
+    </div>
+  </div>
+</div>
+
+<div class="chat-wrapper">
+  <div class="chat-container">
+    <!-- Sidebar with chat sessions -->
+    <div class="chats-sidebar" id="chats-sidebar">
+      <div class="sidebar-header">
+        <h5>Conversations</h5>
+        <button id="toggle-sidebar" class="toggle-sidebar-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <ul class="chats-list" id="chats-list">
+        {% for chat in chats %}
+        <li class="chat-item {% if chat._id == current_chat_id %}active{% endif %}" 
+            data-chat-id="{{ chat._id }}">
+          <div class="chat-title">{{ chat.title }}</div>
+          <div class="chat-date">{{ chat.updatedAt }}</div>
+          <button class="delete-chat" data-chat-id="{{ chat._id }}">×</button>
+        </li>
+        {% endfor %}
+      </ul>
+      <button class="new-chat-btn" onclick="startNewChat()">New Chat</button>
+    </div>
+
+    <!-- Toggle button for collapsed sidebar -->
+    <div class="sidebar-toggle-container" id="sidebar-toggle-container" style="display: none;">
+      <button id="open-sidebar" class="toggle-sidebar-btn"><i class="fas fa-bars"></i></button>
+      <button class="new-chat-btn collapsed" onclick="startNewChat()">+</button>
+    </div>
+
+    <!-- Main chat area -->
+    <div class="chat-main">
+      <div class="chat-title-header">
+        <span id="chat-title-header"></span>
+        <button id="rename-chat-btn" class="rename-chat-btn" style="display: none;">
+          <i class="fas fa-edit"></i>
+        </button>
+      </div>
+      <div class="chat-list" id="chat-messages"></div>
+      
+      <div class="chat-input-container">
+        <input
+          type="text"
+          id="chat-input"
+          placeholder="Type your message here..."
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatInput = document.querySelector("#chat-input");
+  const chatList = document.querySelector("#chat-messages");
+  const chatsSidebar = document.querySelector("#chats-sidebar");
+  const chatsList = document.querySelector("#chats-list");
+  const sidebarToggleContainer = document.querySelector("#sidebar-toggle-container");
+  const toggleSidebarBtn = document.querySelector("#toggle-sidebar");
+  const openSidebarBtn = document.querySelector("#open-sidebar");
+  const chatTitleHeader = document.querySelector("#chat-title-header");
+  const renameChatBtn = document.querySelector("#rename-chat-btn");
+  const userId = "{{ userId }}";
+  let currentChatId = "{{ current_chat_id }}" || null; // Only set to null if not provided
+  let pendingChatId = null;
+  let chatToDelete = null;
+
+  // Delete modal elements
+  const deleteModal = document.getElementById('deleteModal');
+  const cancelDeleteBtn = document.getElementById('cancelDelete');
+  const confirmDeleteBtn = document.getElementById('confirmDelete');
+
+  // Rename modal elements
+  const renameModal = document.getElementById('renameModal');
+  const renameInput = document.getElementById('renameInput');
+  const cancelRenameBtn = document.getElementById('cancelRename');
+  const confirmRenameBtn = document.getElementById('confirmRename');
+
+  // Rename confirmation modal elements
+  const renameConfirmModal = document.getElementById('renameConfirmModal');
+  const newChatNameSpan = document.getElementById('newChatName');
+  const cancelRenameConfirmBtn = document.getElementById('cancelRenameConfirm');
+  const confirmRenameConfirmBtn = document.getElementById('397a6f7f-a4e8-4f5c-bfe1-8f7bade27d9e');
+  let newChatTitle = '';
+
+  // Update browser URL without reload
+  function updateBrowserUrl(chatId) {
+    const newUrl = chatId 
+      ? `/app/${userId}/chats/${chatId}`
+      : `/app/${userId}/chats`;
+    window.history.pushState({}, '', newUrl);
+  }
+
+  // Start a new chat
+  function startNewChat() {
+    chatList.innerHTML = '';
+    currentChatId = null;
+    pendingChatId = null;
+    setActiveChat(null);
+    updateBrowserUrl(null);
+    chatTitleHeader.textContent = '';
+    renameChatBtn.style.display = 'none';
+    chatInput.focus();
+  }
+
+  // Create a new chat
+  async function createNewChat() {
+    try {
+      const response = await axios.post(`/app/${userId}/chats`, {});
+      pendingChatId = response.data.chat_id;
+      return pendingChatId;
+    } catch (error) {
+      console.error("Error creating new chat:", error);
+      throw error;
+    }
+  }
+
+  // Load a chat
+  async function loadChat(chatId) {
+    if (!chatId) return; // Do not load if chatId is invalid
+    try {
+      setActiveChat(chatId);
+      updateBrowserUrl(chatId);
+      
+      const response = await axios.get(`/app/${userId}/chats/${chatId}/messages`);
+      
+      chatList.innerHTML = '';
+      currentChatId = chatId;
+      pendingChatId = null;
+      
+      // Set chat title and show rename button
+      chatTitleHeader.textContent = response.data.title || 'Chat';
+      renameChatBtn.style.display = 'inline-block';
+      
+      response.data.messages.forEach(msg => {
+        addMessageToChat(msg.role, msg.content);
+      });
+      
+      chatList.scrollTop = chatList.scrollHeight;
+    } catch (error) {
+      console.error("Error loading chat:", error);
+      showErrorToast("Failed to load chat. Please try again.");
+      document.querySelector(`.chat-item[data-chat-id="${chatId}"]`)?.remove();
+    }
+  }
+
+  // Show delete confirmation modal
+  function showDeleteModal(chatId, element) {
+    chatToDelete = { id: chatId, element };
+    deleteModal.style.display = 'flex';
+  }
+
+  // Hide delete confirmation modal
+  function hideDeleteModal() {
+    deleteModal.style.display = 'none';
+    chatToDelete = null;
+  }
+
+  // Show rename modal
+  function showRenameModal() {
+    renameInput.value = chatTitleHeader.textContent;
+    renameModal.style.display = 'flex';
+    renameInput.focus();
+  }
+
+  // Hide rename modal
+  function hideRenameModal() {
+    renameModal.style.display = 'none';
+    renameInput.value = '';
+  }
+
+  // Show rename confirmation modal
+  function showRenameConfirmModal(title) {
+    newChatNameSpan.textContent = title;
+    renameConfirmModal.style.display = 'flex';
+  }
+
+  // Hide rename confirmation modal
+  function hideRenameConfirmModal() {
+    renameConfirmModal.style.display = 'none';
+    newChatNameSpan.textContent = '';
+    newChatTitle = '';
+  }
+
+  // Delete a chat
+  async function deleteChat(chatId, element) {
+    try {
+      await axios.delete(`/app/${userId}/chats/${chatId}`);
+      element.remove();
+      
+      if (currentChatId === chatId) {
+        currentChatId = null;
+        chatList.innerHTML = '';
+        setActiveChat(null);
+        updateBrowserUrl(null);
+        chatTitleHeader.textContent = '';
+        renameChatBtn.style.display = 'none';
+      }
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+      showErrorToast("Failed to delete chat");
+    } finally {
+      hideDeleteModal();
+    }
+  }
+
+  // Rename a chat
+  async function renameChat() {
+    try {
+      await axios.patch(`/app/${userId}/chats/${currentChatId}`, {
+        title: newChatTitle
+      });
+      
+      chatTitleHeader.textContent = newChatTitle;
+      
+      // Update sidebar
+      const chatItem = document.querySelector(`.chat-item[data-chat-id="${currentChatId}"]`);
+      if (chatItem) {
+        chatItem.querySelector('.chat-title').textContent = newChatTitle;
+      }
+      
+      hideRenameConfirmModal();
+    } catch (error) {
+      console.error("Error renaming chat:", error);
+      showErrorToast("Failed to rename chat");
+    }
+  }
+
+  // Add message to chat UI
+  function addMessageToChat(role, content) {
+    const messageElement = document.createElement("div");
+    messageElement.className = `message ${role}`;
+    
+    if (role === 'assistant') {
+      const logo = document.createElement("img");
+      logo.src = "/assets/logops.png";
+      logo.className = "message-logo";
+      logo.alt = "PsyRA Logo";
+      
+      const contentDiv = document.createElement("div");
+      contentDiv.className = "content";
+      contentDiv.innerHTML = marked.parse(content);
+      
+      messageElement.appendChild(logo);
+      messageElement.appendChild(contentDiv);
+    } else {
+      messageElement.innerHTML = `<div class="content">${content}</div>`;
+    }
+    
+    chatList.appendChild(messageElement);
+    chatList.scrollTop = chatList.scrollHeight;
+  }
+
+  // Show error toast
+  function showErrorToast(message, isError = true) {
+    const toast = document.createElement('div');
+    toast.className = 'error-toast';
+    toast.textContent = message;
+    toast.style.backgroundColor = isError ? '#ff4d4d' : '#4a90e2';
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.remove();
+    }, 3000);
+  }
+
+  // Send message to server
+  async function sendMessage() {
+    const messageContent = chatInput.value.trim();
+    if (!messageContent) return;
+
+    chatInput.disabled = true;
+    addMessageToChat("user", messageContent);
+    chatInput.value = "";
+
+    try {
+      if (!currentChatId && !pendingChatId) {
+        currentChatId = await createNewChat();
+      }
+      
+      const chatId = currentChatId || pendingChatId;
+      
+      const response = await axios.post(
+        `/app/${userId}/chats/${chatId}/message_send`,
+        { message: messageContent }
+      );
+
+      addMessageToChat(response.data.role, response.data.content);
+      
+      if (pendingChatId) {
+        currentChatId = pendingChatId;
+        pendingChatId = null;
+        await addNewChatToSidebar(currentChatId);
+        updateBrowserUrl(currentChatId);
+        // Fetch the chat details to get the server-assigned title
+        const chatResponse = await axios.get(`/app/${userId}/chats/${currentChatId}/messages`);
+        chatTitleHeader.textContent = chatResponse.data.title || 'Chat';
+        renameChatBtn.style.display = 'inline-block';
+      }
+      
+    } catch (error) {
+      console.error("Error:", error);
+      addMessageToChat("assistant", "Sorry, I encountered an error. Please try again.");
+    } finally {
+      chatInput.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  // Set active chat highlight
+  function setActiveChat(chatId) {
+    document.querySelectorAll('.chat-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    
+    if (chatId) {
+      document.querySelector(`.chat-item[data-chat-id="${chatId}"]`)?.classList.add('active');
+    }
+  }
+
+  // Add new chat to sidebar
+  async function addNewChatToSidebar(chatId) {
+    try {
+      const response = await axios.get(`/app/${userId}/chats/${chatId}/messages`);
+      const chat = response.data;
+      
+      const chatItem = document.createElement('li');
+      chatItem.className = 'chat-item active';
+      chatItem.dataset.chatId = chatId;
+      chatItem.innerHTML = `
+        <div class="chat-title">${chat.title}</div>
+        <div class="chat-date">${new Date(chat.updatedAt).toLocaleString()}</div>
+        <button class="delete-chat" data-chat-id="${chatId}">×</button>
+      `;
+      
+      document.querySelector('.chats-list').prepend(chatItem);
+      setActiveChat(chatId);
+    } catch (error) {
+      console.error("Error adding chat to sidebar:", error);
+    }
+  }
+
+  // Toggle sidebar visibility
+  function toggleSidebar() {
+    if (chatsSidebar.style.display !== 'none') {
+      chatsSidebar.style.display = 'none';
+      sidebarToggleContainer.style.display = 'flex';
+      chatTitleHeader.parentElement.style.paddingLeft = '1rem';
+    } else {
+      chatsSidebar.style.display = 'flex';
+      sidebarToggleContainer.style.display = 'none';
+      chatTitleHeader.parentElement.style.paddingLeft = '0';
+    }
+  }
+
+  // Event listeners
+  chatInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+
+  toggleSidebarBtn.addEventListener('click', toggleSidebar);
+  openSidebarBtn.addEventListener('click', toggleSidebar);
+
+  document.querySelector(".chats-list").addEventListener("click", function(e) {
+    if (e.target.closest(".chat-item")) {
+      const chatId = e.target.closest(".chat-item").dataset.chatId;
+      loadChat(chatId);
+    }
+    
+    if (e.target.classList.contains("delete-chat")) {
+      e.stopPropagation();
+      const chatId = e.target.dataset.chatId;
+      showDeleteModal(chatId, e.target.closest(".chat-item"));
+    }
+  });
+
+  cancelDeleteBtn.addEventListener('click', hideDeleteModal);
+  confirmDeleteBtn.addEventListener('click', () => {
+    if (chatToDelete) {
+      deleteChat(chatToDelete.id, chatToDelete.element);
+    }
+  });
+
+  renameChatBtn.addEventListener('click', showRenameModal);
+  cancelRenameBtn.addEventListener('click', hideRenameModal);
+  confirmRenameBtn.addEventListener('click', () => {
+    newChatTitle = renameInput.value.trim();
+    if (!newChatTitle) {
+      showErrorToast("Chat name cannot be empty");
+      return;
+    }
+    hideRenameModal();
+    showRenameConfirmModal(newChatTitle);
+  });
+
+  cancelRenameConfirmBtn.addEventListener('click', hideRenameConfirmModal);
+  confirmRenameConfirmBtn.addEventListener('click', renameChat);
+
+  window.addEventListener('click', (e) => {
+    if (e.target === deleteModal) {
+      hideDeleteModal();
+    }
+    if (e.target === renameModal) {
+      hideRenameModal();
+    }
+    if (e.target === renameConfirmModal) {
+      hideRenameConfirmModal();
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (currentChatId) {
+      loadChat(currentChatId);
+    } else {
+      chatList.innerHTML = '';
+      chatTitleHeader.textContent = '';
+      renameChatBtn.style.display = 'none';
+    }
+  });
+</script>
+
+<style>
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, #4a90e2, #9b59b6);
+    border-radius: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, #3a80d2, #8b49a6);
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .modal-content {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-content h3 {
+    margin-top: 0;
+    color: #9b59b6;
+    font-size: 1.5rem;
+  }
+
+  .modal-content p {
+    margin-bottom: 1.5rem;
+    color: #555;
+  }
+
+  .modal-content input {
+    width: 90%;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  .modal-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .modal-btn.cancel {
+    background-color: #f1f1f1;
+    color: #555;
+  }
+
+  .modal-btn.cancel:hover {
+    background-color: #e0e0e0;
+  }
+
+  .modal-btn.confirm {
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    color: white;
+  }
+
+  .modal-btn.confirm:hover {
+    background: linear-gradient(45deg, #8b49a6, #3a80d2);
+  }
+
+  .error-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: fadeIn 0.3s, fadeOut 0.3s 2.7s;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; bottom: 0; }
+    to { opacity: 1; bottom: 20px; }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; bottom: 20px; }
+    to { opacity: 0; bottom: 0; }
+  }
+
+  .chat-wrapper {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: rgba(155, 89, 182, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0px 0px 1px 10px rgba(151, 123, 177, 0.25);
+    height: calc(100vh - 180px);
+  }
+
+  .chat-container {
+    display: flex;
+    height: 100%;
+    gap: 0.5rem;
+  }
+
+  .chats-sidebar {
+    width: 300px;
+    background-color: #ffffff;
+    padding: 1.5rem;
+    overflow-y: auto;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: #7790ae #ffffff00;
+  }
+
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .chats-sidebar h5 {
+    font-size: 18px;
+    font-weight: 600;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+  }
+
+  .toggle-sidebar-btn {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+
+  .toggle-sidebar-btn:hover {
+    color: #4a90e2;
+  }
+
+  .sidebar-toggle-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.5rem 0.5rem;
+    background-color: #ffffff;
+    border-radius: 10px;
+  }
+
+  .chats-list {
+    list-style: none;
+    padding: 1rem;
+    margin: 0;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #7790ae #ffffff00;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: #fafafa;
+  }
+
+  .new-chat-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: rgba(155, 89, 182, 0.2);
+    color: #9b59b6;
+    border: none;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background-color 0.3s ease;
+  }
+
+  .new-chat-btn:hover {
+    background-color: rgba(155, 89, 182, 0.4);
+  }
+
+  .new-chat-btn.collapsed {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  .chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f4f8;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .chat-title-header {
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: #333;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    border-bottom: 3px solid #e0d9ff;
+    text-align: center;
+    text-transform: capitalize;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .rename-chat-btn {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+
+  .rename-chat-btn:hover {
+    color: #4a90e2;
+  }
+
+  .chat-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: #7790ae #f1f1f1;
+  }
+
+  .chat-input-container {
+    padding: 1rem;
+    border-top: 1px solid #e0e0e0;
+    background-color: #ffffff;
+  }
+
+  #chat-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    background-color: #f5f5f5;
+    color: #333333;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  #chat-input:focus {
+    outline: none;
+    border-color: #4a90e2;
+    box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+  }
+
+  .message {
+    display: flex;
+    align-items: flex-start;
+    max-width: 70%;
+  }
+
+  .message.user {
+    align-self: flex-end;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem 1rem 0 1rem;
+  }
+
+  .message.assistant {
+    align-self: flex-start;
+  }
+
+  .message.assistant .message-logo {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    margin-right: 12px;
+  }
+
+  .message.assistant .content {
+    background-color: #ffffff;
+    padding: 0.75rem 1rem;
+    border-radius: 0 1rem 1rem 1rem;
+    box-shadow: 0 2px 8px rgba(151, 123, 177, 0.15);
+    color: #333333;
+  }
+
+  .chat-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.3s ease;
+  }
+
+  .chat-item:hover {
+    background: linear-gradient(45deg, rgba(155, 89, 182, 0.2), rgba(74, 144, 226, 0.2));
+  }
+
+  .chat-title {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #333333;
+  }
+
+  .chat-date {
+    font-size: 0.8rem;
+    color: #666666;
+  }
+
+  .delete-chat {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: color 0.3s ease;
+  }
+
+  .delete-chat:hover {
+    color: #4dff82;
+  }
+
+  .chat-item.active {
+    background: linear-gradient(45deg, rgba(155, 89, 182, 0.3), rgba(74, 144, 226, 0.3));
+    box-shadow: 0 2px 8px rgba(151, 123, 177, 0.3);
+  }
+</style>
+{% endblock %}

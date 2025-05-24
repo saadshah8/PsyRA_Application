@@ -1,0 +1,36 @@
+fastapi
+uvicorn
+pymongo
+jinja2
+pydantic
+openai
+openpyxl
+python-jose
+asyncio
+pandas
+python-dotenv
+requests
+langchain-core  # for langchain_core.documents
+langchain-text-splitters  # for langchain_text_splitters
+pymupdf  # for fitz (PyMuPDF)
+groq
+
+# ----------------------------------
+rank_bm25
+cohere
+langchain_cohere
+langchain_groq
+
+# ================================
+# PyMuPDF>=1.22.0            # For reliable PDF parsing
+# pandas>=1.5.0              # For saving chunks to CSV
+# langchain>=0.1.0           # For RecursiveCharacterTextSplitter
+# nltk>=3.8.1                # For tokenization (used optionally)
+# python-dotenv>=0.19.0      # For handling environment variables
+# faiss-cpu>=1.7.2           # FAISS for vector indexing (CPU version)
+# langchain_community
+# tiktoken                   #To properly clip to 2048 tokens, use the tiktoken tokenizer
+# rank_bm25
+# cohere
+# langchain_cohere
+# langchain_groq
