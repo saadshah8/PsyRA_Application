@@ -146,7 +146,7 @@ async def rename_chat(userId: str, chat_id: str, request: ChatRenameRequest):
     
     return {"message": "Chat renamed successfully", "title": request.title}
 
-RECENT_MESSAGE_LIMIT = 8
+# RECENT_MESSAGE_LIMIT = 8
 
 @chats_router.post("/{chat_id}/message_send", response_class=JSONResponse)
 async def send_chat_message(userId: str, chat_id: str, request: ChatMessageRequest):
@@ -167,7 +167,7 @@ async def send_chat_message(userId: str, chat_id: str, request: ChatMessageReque
     agent.system_prompt(PSYRA_PROMPT)
 
     # Load recent messages for context
-    recent_messages = chat["messages"][-RECENT_MESSAGE_LIMIT:]
+    # recent_messages = chat["messages"][-RECENT_MESSAGE_LIMIT:] # load previous limited messages
     recent_messages = chat["messages"][:] # load all messages
 
     for msg in recent_messages:
