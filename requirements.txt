@@ -11,6 +11,7 @@ pydantic
 pandas
 python-dotenv
 requests
+python-multipart
 
 # AI and Language Models
 groq
