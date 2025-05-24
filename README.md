@@ -79,7 +79,6 @@ pip install -r requirements.txt
 
 3. Start the server:
 ```bash
-<!-- - python server.py -->
 fastapi dev server.py
 ```
 
