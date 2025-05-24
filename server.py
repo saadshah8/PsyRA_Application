@@ -6,6 +6,7 @@ from handlers.home.router import home_router
 from handlers.auth.router import auth_router
 from handlers.app.setting.router import settings_router
 from dotenv import load_dotenv
+from fastapi.responses import RedirectResponse
 load_dotenv()
 
 app = FastAPI()
@@ -39,6 +40,10 @@ app.include_router(
     prefix="/app",
     tags=["Home"]
 )
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/auth/login", status_code=303)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))
