@@ -79,7 +79,7 @@ pip install -r requirements.txt
 
 3. Start the server:
 ```bash
-python server.py
+fastapi dev server.py
 ```
 
 The application will be available at `http://localhost:8000`
