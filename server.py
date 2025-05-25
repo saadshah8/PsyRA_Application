@@ -43,7 +43,7 @@ app.include_router(
 
 @app.get("/")
 async def root():
-    return RedirectResponse(url="/auth/login", status_code=303)
+    return RedirectResponse(url="/auth", status_code=303)
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 8000))

@@ -120,3 +120,11 @@ async def update_settings(userId: str, old_password: str = Form(...), name: str 
         {"$set": update_data}
     )
     return RedirectResponse(url=f"/app/{userId}", status_code=303)
+
+@auth_router.get("/", response_class=HTMLResponse)
+async def landing_page(request: Request):
+    return views.TemplateResponse(
+        request=request,
+        name="landing.html",
+        context={}
+    )

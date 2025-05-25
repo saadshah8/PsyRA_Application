@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PsyRA</title>
+    <link rel="icon" type="image/png" href="/assets/logops.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@200..1000&display=swap" rel="stylesheet" />
+    <style>
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(-45deg, #f0f4f8, #e6eef6, #f5e6fa, #e6f0fa);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            min-height: 100vh;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        }
+
+        .logo-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+            padding: 10px 20px;
+            border-radius: 20px;
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .logo-container img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 8px 16px rgba(155, 89, 182, 0.3);
+            animation: float 3s ease-in-out infinite;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container img:hover {
+            transform: scale(1.3) rotate(0deg);
+        }
+
+        .logo-container span {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #9b59b6, #4a90e2, #9b59b6);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+        }
+
+        .hero-section h1 {
+            font-size: 72px;
+            background: linear-gradient(45deg, #9b59b6, #4a90e2, #9b59b6);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+            margin-bottom: 30px;
+            letter-spacing: -2px;
+            line-height: 1.2;
+        }
+
+        .hero-section p {
+            font-size: 24px;
+            color: #444;
+            max-width: 900px;
+            margin: 0 auto 50px;
+            line-height: 1.8;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .cta-button {
+            width: 250px;
+            padding: 20px 40px;
+            border-radius: 35px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .primary-button {
+            background: linear-gradient(45deg, #9b59b6, #4a90e2);
+            border: none;
+            color: white;
+            box-shadow: 0 10px 20px rgba(155, 89, 182, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .primary-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+        }
+
+        .primary-button:hover:before {
+            left: 100%;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(155, 89, 182, 0.6);
+        }
+
+        .secondary-button {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(45deg, #9b59b6, #4a90e2);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+            box-shadow: 0 8px 16px rgba(155, 89, 182, 0.2);
+        }
+
+        .secondary-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 24px rgba(155, 89, 182, 0.3);
+            background-image: linear-gradient(rgba(155, 89, 182, 0.1), rgba(155, 89, 182, 0.1)), linear-gradient(45deg, #9b59b6, #4a90e2);
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 50px 40px;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(151, 123, 177, 0.15);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .feature-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #9b59b6, #4a90e2);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+
+        .feature-card:hover:before {
+            transform: scaleX(1);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px rgba(151, 123, 177, 0.2);
+        }
+
+        .feature-card h3 {
+            font-size: 28px;
+            background: linear-gradient(45deg, #9b59b6, #4a90e2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 48px;
+                padding: 0 20px;
+            }
+
+            .hero-section p {
+                font-size: 20px;
+                padding: 0 30px;
+            }
+
+            .logo-container {
+                padding: 8px 15px;
+            }
+
+            .logo-container img {
+                width: 50px;
+                height: 50px;
+            }
+
+            .logo-container span {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Nunito', sans-serif; background-color: #f0f4f8; min-height: 100vh;">
+
+<style>
+  .logo-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-container img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+
+  .logo-container span {
+    font-size: 30px;
+    font-weight: 600;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .landing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+  }
+
+  .hero-section {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+
+  .hero-section h1 {
+    font-size: 48px;
+    font-weight: 800;
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+
+  .hero-section p {
+    font-size: 20px;
+    color: #666666;
+    max-width: 800px;
+    margin: 0 auto 30px;
+    line-height: 1.6;
+  }
+
+  .cta-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 40px;
+  }
+
+  .cta-button {
+    width: 200px;
+    padding: 15px 40px;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .primary-button {
+    background: linear-gradient(45deg, #9b59b6, #4a90e2);
+    color: white;
+  }
+
+  .primary-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+  }
+
+  .secondary-button {
+    border: 2px solid #9b59b6;
+    color: #9b59b6;
+  }
+
+  .secondary-button:hover {
+    background: rgba(155, 89, 182, 0.1);
+  }
+
+  .features-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-top: 60px;
+  }
+
+  .feature-card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(151, 123, 177, 0.1);
+    text-align: center;
+  }
+
+  .feature-card h3 {
+    color: #9b59b6;
+    margin-bottom: 15px;
+    font-size: 24px;
+  }
+
+  .feature-card p {
+    color: #666666;
+    line-height: 1.6;
+  }
+</style>
+
+<div class="logo-container">
+  <img src="/assets/logops.png" alt="PsyRA Logo">
+  <span>PsyRA</span>
+</div>
+
+<div class="landing-container">
+  <div class="hero-section">
+    <h1>Welcome to PsyRA</h1>
+    <p>Your personal AI-powered mental health companion. Get support, guidance, and understanding whenever you need it, in a safe and confidential environment.</p>
+    
+    <div class="cta-buttons">
+      <a href="/auth/signup" class="cta-button primary-button">Get Started</a>
+      <a href="/auth/login" class="cta-button secondary-button">Login</a>
+    </div>
+  </div>
+
+  <div class="features-section">
+    <div class="feature-card">
+      <h3>24/7 Support</h3>
+      <p>Access professional-grade mental health support anytime, anywhere. PsyRA is always here to listen and help.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>Personalized Guidance</h3>
+      <p>Receive tailored advice and coping strategies based on your unique situation and needs.</p>
+    </div>
+
+    <div class="feature-card">
+      <h3>Safe & Confidential</h3>
+      <p>Your privacy is our priority. All conversations are encrypted and completely confidential.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
