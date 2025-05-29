@@ -56,7 +56,8 @@ class Agent:
         try:
             response = self.client.chat.completions.create(
                 messages=self.messages,
-                model="llama-3.3-70b-versatile",  # Use original model
+                # model="llama-3.3-70b-versatile",  # Use original model
+                model="meta-llama/llama-4-maverick-17b-128e-instruct",  # Use original model
                 stream=True,
                 temperature=0.4
             )

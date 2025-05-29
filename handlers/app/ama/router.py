@@ -7,7 +7,7 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from core.database import conversations, user_collection
 from typing import Optional
-from modules.psyra_prompt import PSYRA_PROMPT
+from modules.psyra_promptl4 import PSYRA_PROMPT
 
 chats_router = APIRouter()
 views = Jinja2Templates(directory="views")
